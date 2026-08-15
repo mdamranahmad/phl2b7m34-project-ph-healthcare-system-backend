@@ -1,9 +1,7 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import crypto from "crypto";
 import express, {
 	type Application,
-	type NextFunction,
 	type Request,
 	type Response,
 } from "express";
@@ -32,6 +30,7 @@ app.use(cookieParser());
 app.use("/api/v1/auth", AuthRoutes);
 
 // Basic route
+// biome-ignore lint/correctness/noUnusedFunctionParameters: explanation
 app.get("/", async (req: Request, res: Response) => {
 	res.status(httpStatus.OK).json({
 		success: true,
