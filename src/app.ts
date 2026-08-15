@@ -7,7 +7,7 @@ import express, {
 	type Response,
 } from "express";
 import httpStatus from "http-status";
-import z, { email, success } from "zod";
+import z from "zod";
 import config from "./app/config";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
