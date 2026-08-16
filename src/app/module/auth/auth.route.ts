@@ -1,6 +1,4 @@
-import {
-	Router,
-} from "express";
+import { Router } from "express";
 import { Role } from "../../../generated/prisma/enums";
 import { auth } from "../../middleware/checkAuth";
 import { validateRequest } from "../../middleware/validateRequest";
@@ -10,20 +8,22 @@ import { UserValidation } from "./auth.validation";
 const router = Router();
 
 router.post(
-	"/register",
-	validateRequest(UserValidation.PatientRegistrationZSchema),
-	AuthController.registerPatient,
+    "/register",
+    validateRequest(UserValidation.PatientRegistrationZSchema),
+    AuthController.registerPatient,
 );
 router.post(
-	"/login",
-	validateRequest(UserValidation.LoginZSchema),
-	AuthController.loginUser,
+    "/login",
+    validateRequest(UserValidation.LoginZSchema),
+    AuthController.loginUser,
 );
 router.get(
-	"/me",
-	auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
-	AuthController.getMe,
+    "/me",
+    auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
+    AuthController.getMe,
 );
 router.post("/refresh-token", AuthController.refreshToken);
 router.post("/google", AuthController.googleLogin);
+router.post("/forget-password", AuthController.forgetPassword);
+router.post("/reset-password", AuthController.resetPassword);
 export const AuthRoutes = router;
