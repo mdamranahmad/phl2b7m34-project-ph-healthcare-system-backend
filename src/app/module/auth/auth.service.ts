@@ -209,6 +209,26 @@ const verifyPatientEmail = async (payload: IVerifyPatientEmailPayload) => {
         include: { patient: true },
     });
 
+    await redisClient.del(patientRegistrationKey);
+
+    const templatePath = path.join(
+        process.cwd(),
+        "src/app/templates/patient-welcome-email.ejs",
+    );
+
+    const templateData = {
+        name: createdUser.name,
+    };
+
+    const html = await ejs.renderFile(templatePath, templateData);
+
+    await transporter.sendMail({
+        from: config.email_sender,
+        to: createdUser.email,
+        subject: "Welcome to PH Healthcare System!",
+        html,
+    });
+
     const { patient, ...user } = createdUser;
     const jwtPayload = {
         userId: user.id,
@@ -235,26 +255,6 @@ const verifyPatientEmail = async (payload: IVerifyPatientEmailPayload) => {
         accessToken,
         refreshToken,
     };
-
-    // const templatePath = path.join(
-    //     process.cwd(),
-    //     "src/app/templates/reset-password.ejs",
-    // );
-
-    // const templateData = {
-    //     name: isUserExists.name,
-    // };
-
-    // const html = await ejs.renderFile(templatePath, templateData);
-
-    // await transporter.sendMail({
-    //     from: config.email_sender,
-    //     to: isUserExists.email,
-    //     subject: "Password Reset Successfully.",
-    //     // text: `Your OTP is ${otp}`,
-    //     // html: `<h1>Your changed your password</h1>`,
-    //     html,
-    // });
 };
 
 const loginUser = async (payload: ILoginUserPayload) => {
@@ -470,6 +470,24 @@ const googleLogin = async (payload: IGoogleLoginPayload) => {
                         },
                     },
                 },
+            });
+
+            const templatePath = path.join(
+                process.cwd(),
+                "src/app/templates/patient-welcome-email.ejs",
+            );
+
+            const templateData = {
+                name: user.name,
+            };
+
+            const html = await ejs.renderFile(templatePath, templateData);
+
+            await transporter.sendMail({
+                from: config.email_sender,
+                to: user.email,
+                subject: "Welcome to PH Healthcare System!",
+                html,
             });
         }
     }
