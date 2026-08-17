@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Email Verification</title>
+    <style>
+        /* Reset styles for email clients */
+        body, table, td, a {
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+        }
+        table, td {
+            mso-table-lspace: 0pt;
+            mso-table-rspace: 0pt;
+        }
+        img {
+            -ms-interpolation-mode: bicubic;
+            border: 0;
+            height: auto;
+            line-height: 100%;
+            outline: none;
+            text-decoration: none;
+        }
+        body {
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            background-color: #f4f6f8;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+        }
+    </style>
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f6f8;">
+
+    <!-- Main Container Table -->
+    <table border="0" cellpadding="0" cellspacing="0" width="100%" style="background-color: #f4f6f8; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                
+                <!-- Email Card -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; background-color: #ffffff; border-radius: 12px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05); overflow: hidden; padding: 40px 32px;">
+                    
+                    <!-- Header / Logo Placeholder -->
+                    <tr>
+                        <td align="center" style="padding-bottom: 24px;">
+                            <h2 style="margin: 0; color: #1a1a1a; font-size: 20px; font-weight: 700; letter-spacing: -0.5px;">PH Healthcare System</h2>
+                        </td>
+                    </tr>
+
+                    <!-- Body Content -->
+                    <tr>
+                        <td align="center" style="padding-bottom: 24px;">
+                            <h1 style="margin: 0 0 12px 0; color: #111827; font-size: 24px; font-weight: 600; line-height: 1.3;">Hello <%=name%>, please verify your email: <%=email%> to gain access to your account. </h1>
+                            <p style="margin: 0; color: #4b5563; font-size: 15px; line-height: 1.5;">Use the one-time passcode (OTP) below to verify your email. This code will expire in <%=expiresIn%> minutes.</p>
+                        </td>
+                    </tr>
+
+                    <!-- OTP Display Box -->
+                    <tr>
+                        <td align="center" style="padding: 16px 0 32px 0;">
+                            <div style="background-color: #f3f4f6; border: 1px dashed #d1d5db; border-radius: 8px; padding: 16px 24px; display: inline-block;">
+                                <span style="font-family: 'Courier New', Courier, monospace; font-size: 32px; font-weight: 700; color: #1f2937; letter-spacing: 6px;"><%=OTP%></span>
+                            </div>
+                        </td>
+                    </tr>
+
+                    <!-- Security Warning -->
+                    <tr>
+                        <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 24px;">
+                            <p style="margin: 0; color: #6b7280; font-size: 13px; line-height: 1.5;">
+                                If you didn't request this email verification, you can safely ignore this email. Someone else might have typed your address by mistake.
+                            </p>
+                        </td>
+                    </tr>
+
+                </table>
+                <!-- End Email Card -->
+
+                <!-- Footer -->
+                <table border="0" cellpadding="0" cellspacing="0" width="100%" style="max-width: 480px; margin-top: 24px;">
+                    <tr>
+                        <td align="center" style="color: #9ca3af; font-size: 12px; line-height: 1.5;">
+                            <p style="margin: 0;">&copy; <%= new Date().getFullYear() %> PH Healthcare System. All rights reserved.</p>
+                        </td>
+                    </tr>
+                </table>
+
+            </td>
+        </tr>
+    </table>
+
+</body>
+</html>
