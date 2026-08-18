@@ -198,6 +198,7 @@ const googleLogin = catchAsync(async (req: Request, res: Response) => {
 const forgetPassword = catchAsync(async (req: Request, res: Response) => {
 	const payload = req.body;
 
+	// biome-ignore lint/correctness/noUnusedVariables: explanation>
 	const result = await AuthService.forgetPassword(payload);
 
 	sendResponse(res, {
