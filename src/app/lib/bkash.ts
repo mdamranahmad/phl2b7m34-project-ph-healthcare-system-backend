@@ -1,18 +1,30 @@
 import config from "../config";
 import { redisClient } from "./redis";
 
-export const bkashIdToken = async () => {
+export const getBkashIdToken = async () => {
     try {
         const IdTokenKey = "bkash:idToken";
         const RefreshTokenKey = "bkash:refreshToken";
 
         let bkashIdToken = await redisClient.get(IdTokenKey);
-        let bkashRefreshToken = await redisClient.get(RefreshTokenKey);
+        const bkashRefreshToken = await redisClient.get(RefreshTokenKey);
 
-        const bkashIdTokenTTl = await redisClient.ttl(IdTokenKey);
+        const bkashIdTokenTTL = await redisClient.ttl(IdTokenKey);
+        const bkashRefreshTokenTTL = await redisClient.ttl(RefreshTokenKey);
+
+        // console.log({
+        //     bkashIdToken,
+        //     bkashRefreshToken,
+        //     bkashIdTokenTTL,
+        //     bkashRefreshTokenTTL,
+        // });
 
         // Generate new id_token from refresh_token
-        if (bkashIdTokenTTl <= 600 && bkashRefreshToken) {
+        if (
+            (bkashIdTokenTTL <= 600 || !bkashIdToken) &&
+            bkashRefreshToken &&
+            bkashRefreshTokenTTL > 600
+        ) {
             const refreshTokenResponse = await fetch(
                 `${config.bkash_base_url}/tokenized/checkout/token/refresh`,
                 {
@@ -31,6 +43,10 @@ export const bkashIdToken = async () => {
                 },
             );
 
+            if (!refreshTokenResponse.ok) {
+                throw new Error("Bkash Access Token Grant Failed!");
+            }
+
             const bkashRefreshTokenResult = await refreshTokenResponse.json();
 
             bkashIdToken = bkashRefreshTokenResult.id_token;
@@ -44,9 +60,8 @@ export const bkashIdToken = async () => {
             return bkashIdToken;
         }
 
-        if (bkashIdToken) {
+        if (bkashIdTokenTTL > 600) {
             // Check if id_token is present in redis
-
             return bkashIdToken;
         }
 
@@ -73,8 +88,6 @@ export const bkashIdToken = async () => {
         }
 
         const result = await response.json();
-
-        console.log("result 22: ", result);
 
         // Store generated token in redis
         await redisClient.set(IdTokenKey, result.id_token, {
