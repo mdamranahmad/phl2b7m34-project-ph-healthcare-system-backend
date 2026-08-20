@@ -18,14 +18,21 @@ const bookAppointment = catchAsync(async (req: Request, res: Response) => {
 const bookAppointmentCallback = catchAsync(
     async (req: Request, res: Response) => {
         console.log("req.query: ", req.query);
-        const result = await AppointmentService.bookAppointmentCallback();
+        const { executedPaymentResult, redirectUrl } =
+            await AppointmentService.bookAppointmentCallback(req.query);
 
-        sendResponse(res, {
-            statusCode: httpStatus.OK,
-            success: true,
-            message: "Profile picture updated successfully.",
-            data: result,
-        });
+        console.log(
+            "Controller executedPaymentResult: ",
+            executedPaymentResult,
+        );
+        res.redirect(redirectUrl);
+
+        // sendResponse(res, {
+        //     statusCode: httpStatus.OK,
+        //     success: true,
+        //     message: "Profile picture updated successfully.",
+        //     data: result,
+        // });
     },
 );
 
