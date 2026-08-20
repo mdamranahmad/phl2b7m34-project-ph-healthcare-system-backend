@@ -7,7 +7,7 @@ const router = Router();
 
 router.post(
     "/book-appointment",
-    auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
+    auth(Role.PATIENT),
     AppointmentController.bookAppointment,
 );
 
