@@ -13,7 +13,37 @@ const bookAppointment = catchAsync(async (req: Request, res: Response) => {
     sendResponse(res, {
         statusCode: httpStatus.OK,
         success: true,
-        message: "Profile picture updated successfully.",
+        message: "Payment Process for Appointment Initiated Successfully.",
+        data: result,
+    });
+});
+
+const payAppointment = catchAsync(async (req: Request, res: Response) => {
+    const payload = req.body;
+    const user = req.user!;
+
+    const result = await AppointmentService.payAppointment(payload, user);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message:
+            "Payment Process for Unpaid Appointment Initiated Successfully.",
+        data: result,
+    });
+});
+
+const cancelAppointment = catchAsync(async (req: Request, res: Response) => {
+    const payload = req.body;
+    // const user = req.user!;
+
+    const result = await AppointmentService.cancelAppointment(payload);
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message:
+            "Appointment Cancelled and Refunded Successfully.",
         data: result,
     });
 });
@@ -38,4 +68,6 @@ const bookAppointmentCallback = catchAsync(
 export const AppointmentController = {
     bookAppointment,
     bookAppointmentCallback,
+    payAppointment,
+    cancelAppointment,
 };
