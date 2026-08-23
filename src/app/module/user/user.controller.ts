@@ -5,28 +5,28 @@ import { sendResponse } from "../../utils/sendResponse";
 import { UserServices } from "./user.service";
 
 const uploadProfileImage = catchAsync(async (req: Request, res: Response) => {
-    console.log("req.file: ", req.file);
+	console.log("req.file: ", req.file);
 
-    if (!req.file) {
-        throw new Error("No image uploaded!");
-    }
+	if (!req.file) {
+		throw new Error("No image uploaded!");
+	}
 
-    const userId = req.user?.userId;
+	const userId = req.user?.userId;
 
-    const result = await UserServices.uploadProfileImage(
-        req.file?.buffer,
-        // biome-ignore lint/style/noNonNullAssertion: explanation>
-        userId!,
-    );
+	const result = await UserServices.uploadProfileImage(
+		req.file?.buffer,
+		// biome-ignore lint/style/noNonNullAssertion: explanation>
+		userId!,
+	);
 
-    sendResponse(res, {
-        statusCode: httpStatus.OK,
-        success: true,
-        message: "Profile picture updated successfully.",
-        data: result,
-    });
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Profile picture updated successfully.",
+		data: result,
+	});
 });
 
 export const UserController = {
-    uploadProfileImage,
+	uploadProfileImage,
 };

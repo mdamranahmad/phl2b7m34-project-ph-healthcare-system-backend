@@ -1,30 +1,28 @@
 import cookieParser from "cookie-parser";
 import cors from "cors";
-import crypto from "crypto";
 import express, {
-    type Application,
-    type NextFunction,
-    type Request,
-    type Response,
+	type Application,
+	type NextFunction,
+	type Request,
+	type Response,
 } from "express";
 import httpStatus from "http-status";
-import z from "zod";
 import config from "./app/config";
+import { getBkashIdToken } from "./app/lib/bkash";
 import { globalErrorHandler } from "./app/middleware/globalErrorHandler";
 import { notFound } from "./app/middleware/notFound";
-import { AuthRoutes } from "./app/module/auth/auth.route";
-import { UserRoutes } from "./app/module/user/user.route";
-import { getBkashIdToken } from "./app/lib/bkash";
 import { AppointmentRoutes } from "./app/module/appointment/appointment.route";
+import { AuthRoutes } from "./app/module/auth/auth.route";
 import { DoctorRoutes } from "./app/module/doctor/doctor.route";
+import { UserRoutes } from "./app/module/user/user.route";
 
 const app: Application = express();
 
 app.use(
-    cors({
-        origin: config.frontend_url,
-        credentials: true,
-    }),
+	cors({
+		origin: config.frontend_url,
+		credentials: true,
+	}),
 );
 
 // Enable URL-encoded form data parsing
@@ -40,27 +38,27 @@ app.use("/api/v1/appointment", AppointmentRoutes);
 app.use("/api/v1/doctor", DoctorRoutes);
 
 app.get("/test", async (req: Request, res: Response, next: NextFunction) => {
-    try {
-        const grantIdTokenResult = await getBkashIdToken();
+	try {
+		const grantIdTokenResult = await getBkashIdToken();
 
-        res.status(httpStatus.OK).json({
-            success: true,
-            message: "WelCome to PH Healthcare System. You Are Using Zod.",
-            data: grantIdTokenResult,
-        });
-    } catch (error) {
-        console.log(error);
-        next(error);
-    }
+		res.status(httpStatus.OK).json({
+			success: true,
+			message: "WelCome to PH Healthcare System. You Are Using Zod.",
+			data: grantIdTokenResult,
+		});
+	} catch (error) {
+		console.log(error);
+		next(error);
+	}
 });
 
 // Basic route
 // biome-ignore lint/correctness/noUnusedFunctionParameters: explanation
 app.get("/", async (req: Request, res: Response) => {
-    res.status(httpStatus.OK).json({
-        success: true,
-        message: "Welcome to PH Healthcare System Backend",
-    });
+	res.status(httpStatus.OK).json({
+		success: true,
+		message: "Welcome to PH Healthcare System Backend",
+	});
 });
 
 app.use(globalErrorHandler);
