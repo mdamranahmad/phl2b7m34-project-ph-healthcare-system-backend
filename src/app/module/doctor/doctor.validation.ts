@@ -16,7 +16,7 @@ export const ApplyAsDoctorZSchema = z.object({
 	doctor: z.object({
 		address: z.string().optional(),
 
-		specilization: z
+		specialization: z
 			.string({
 				message: "Specialization is required",
 			})

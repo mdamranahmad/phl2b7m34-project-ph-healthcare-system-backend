@@ -1,6 +1,9 @@
 import bcrypt from "bcryptjs";
 import type { UploadApiResponse } from "cloudinary";
-import { Role } from "../../../generated/prisma/enums";
+import {
+    DoctorVerificationStatus,
+    Role,
+} from "../../../generated/prisma/enums";
 import config from "../../config";
 import { cloudinary } from "../../lib/cloudinary";
 import { prisma } from "../../lib/prisma";
@@ -9,9 +12,15 @@ import { redisClient } from "../../lib/redis";
 import path from "path";
 import { transporter } from "../../lib/nodemailer";
 import ejs from "ejs";
+import {
+    IApplyAsDoctorPayload,
+    IApproveDoctorPayload,
+    IVerifyDoctorEmailPayload,
+} from "./doctor.interface";
+import { RequestUser } from "../../middleware/checkAuth";
 
 const applyAsDoctor = async (
-    payload: any,
+    payload: IApplyAsDoctorPayload,
     resume: Express.Multer.File | null,
     additinalfiles: Express.Multer.File[],
 ) => {
@@ -147,33 +156,49 @@ const applyAsDoctor = async (
     return doctorApplication;
 };
 
-const verifyDoctorEmail = async (payload: any) => {
-    // const email = payload.email.trim().toLowerCase();
-    // const otp = payload.otp;
-    // const isUserExists = await prisma.user.findUnique({
-    // 	where: { email },
-    // });
-    // if (isUserExists?.status === "BLOCKED") {
-    // 	throw new Error("User is Blocked!");
-    // }
-    // if (isUserExists?.emailVerified) {
-    // 	throw new Error("Email Already Varified!");
-    // }
-    // if (isUserExists?.isDeleted || isUserExists?.status === "DELETED") {
-    // 	throw new Error("User is Deleted!");
-    // }
-    // // if (isUserExists.googleId && isUserExists.authProvider === "GOOGLE") {
-    // //     throw new Error("User Has Account With Google!");
-    // // }
-    // const otpKey = `patient-registration-otp: ${email}`;
-    // const redisOTP = await redisClient.get(otpKey);
-    // if (!redisOTP) {
-    // 	throw new Error("Invalid OTP!");
-    // }
-    // if (redisOTP !== otp) {
-    // 	throw new Error("OTP does not match!");
-    // }
-    // await redisClient.del(otpKey);
+const verifyDoctorEmail = async (payload: IVerifyDoctorEmailPayload) => {
+    const email = payload.email.trim().toLowerCase();
+    const otp = payload.otp;
+
+    const isUserExists = await prisma.user.findUnique({
+        where: { email, role: Role.DOCTOR },
+    });
+
+    if (!isUserExists) {
+        throw new Error("Doctor Application Not Found!");
+    }
+
+    if (isUserExists?.emailVerified) {
+        throw new Error("Email Already Varified!");
+    }
+
+    const otpKey = `doctor-application-otp: ${email}`;
+
+    const redisOTP = await redisClient.get(otpKey);
+
+    if (!redisOTP) {
+        throw new Error(
+            "OTP Expired. Your application window has been closed, please apply again.",
+        );
+    }
+
+    if (redisOTP !== otp) {
+        throw new Error("OTP does not match!");
+    }
+
+    await redisClient.del(otpKey);
+
+    const verifiedDoctor = await prisma.user.update({
+        where: { id: isUserExists.id },
+        data: {
+            emailVerified: true,
+        },
+        omit: { password: true },
+        include: { doctor: true },
+    });
+
+    return verifiedDoctor;
+
     // const patientRegistrationKey = `patient-registration-data: ${email}`;
     // const redisPatientData = await redisClient.get(patientRegistrationKey);
     // if (!redisPatientData) {
@@ -237,9 +262,76 @@ const verifyDoctorEmail = async (payload: any) => {
     // 	accessToken,
     // 	refreshToken,
     // };
+
+    // if (isUserExists?.status === "BLOCKED") {
+    // 	throw new Error("User is Blocked!");
+    // }
+    // if (isUserExists?.isDeleted || isUserExists?.status === "DELETED") {
+    // 	throw new Error("User is Deleted!");
+    // }
+    // // if (isUserExists.googleId && isUserExists.authProvider === "GOOGLE") {
+    // //     throw new Error("User Has Account With Google!");
+    // // }
+    //
+};
+
+const approveDoctor = async (payload: IApproveDoctorPayload, reviewer: RequestUser,) => {
+    const { doctorId, verificationStatus, rejectionReason } = payload;
+
+    const existingDoctor = await prisma.doctor.findUnique({
+        where: { id: doctorId },
+        include: { user: true },
+    });
+
+    if (!existingDoctor) {
+        throw new Error("Doctor Application Not Found!");
+    }
+
+    if (existingDoctor.isDeleted) {
+        throw new Error("Doctor Application Has Been Deleted!");
+    }
+
+    if (!existingDoctor.user.emailVerified) {
+        throw new Error(
+            "Doctor email has not been varified yet. Application can not be reviewed!",
+        );
+    }
+
+    if (
+        existingDoctor.verificationStatus !== DoctorVerificationStatus.PENDING
+    ) {
+        throw new Error(
+            `Doctor Application Has Already Been ${existingDoctor.verificationStatus.toLowerCase()}`,
+        );
+    }
+
+    if (
+        verificationStatus === DoctorVerificationStatus.REJECTED &&
+        !rejectionReason
+    ) {
+        throw new Error(
+            "Rejection reason is required when rejecting a doctor application.",
+        );
+    }
+
+    const updateDoctor = await prisma.doctor.update({
+        where: { id: doctorId },
+        data: {
+            verificationStatus,
+            rejectionReason:
+                verificationStatus === DoctorVerificationStatus.REJECTED
+                    ? rejectionReason
+                    : null,
+            reviewedBy: reviewer.userId,
+            reviewedAt: new Date(),
+        },
+    });
+
+	
 };
 
 export const DoctorServices = {
     applyAsDoctor,
     verifyDoctorEmail,
+    approveDoctor,
 };
