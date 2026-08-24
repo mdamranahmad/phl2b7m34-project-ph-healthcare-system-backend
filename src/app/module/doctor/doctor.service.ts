@@ -275,7 +275,10 @@ const verifyDoctorEmail = async (payload: IVerifyDoctorEmailPayload) => {
     //
 };
 
-const approveDoctor = async (payload: IApproveDoctorPayload, reviewer: RequestUser,) => {
+const approveDoctor = async (
+    payload: IApproveDoctorPayload,
+    reviewer: RequestUser,
+) => {
     const { doctorId, verificationStatus, rejectionReason } = payload;
 
     const existingDoctor = await prisma.doctor.findUnique({
@@ -327,11 +330,43 @@ const approveDoctor = async (payload: IApproveDoctorPayload, reviewer: RequestUs
         },
     });
 
-	
+    const isApproved = verificationStatus === DoctorVerificationStatus.APPROVED;
+
+    const templatePath = path.join(
+        process.cwd(),
+        `src/app/templates/${isApproved ? "doctor-application-approved.ejs" : "doctor-application-rejected.ejs"}`,
+    );
+
+    const templateData = {
+        name: updateDoctor.name,
+        reason: updateDoctor.rejectionReason,
+    };
+
+    const html = await ejs.renderFile(templatePath, templateData);
+
+    await transporter.sendMail({
+        from: config.email_sender,
+        to: updateDoctor.email,
+        subject: isApproved
+            ? "Your Doctor Application Has Been Approved"
+            : "Your Doctor Application Has Been rejected",
+        html,
+    });
+
+    return updateDoctor;
+};
+
+const getAllDoctors = async () => {
+    // search, filter, sorting, pagination
+
+    const allDoctors = await prisma.doctor.findMany({});
+
+    return allDoctors;
 };
 
 export const DoctorServices = {
     applyAsDoctor,
     verifyDoctorEmail,
     approveDoctor,
+    getAllDoctors,
 };

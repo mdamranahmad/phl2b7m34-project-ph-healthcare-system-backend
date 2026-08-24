@@ -53,7 +53,10 @@ const verifyDoctorEmail = catchAsync(async (req: Request, res: Response) => {
 const approveDoctor = catchAsync(async (req: Request, res: Response) => {
     const payload = req.body;
 
-    const result = await DoctorServices.approveDoctor(payload);
+    // biome-ignore lint/style/noNonNullAssertion: explanation>
+    const user = req.user!;
+
+    const result = await DoctorServices.approveDoctor(payload, user);
 
     sendResponse(res, {
         statusCode: httpStatus.OK,
@@ -63,8 +66,20 @@ const approveDoctor = catchAsync(async (req: Request, res: Response) => {
     });
 });
 
+const getAllDoctors = catchAsync(async (req: Request, res: Response) => {
+    const result = await DoctorServices.getAllDoctors();
+
+    sendResponse(res, {
+        statusCode: httpStatus.OK,
+        success: true,
+        message: "Doctors Profile Retrieved Successfully!",
+        data: result,
+    });
+});
+
 export const DoctorController = {
     applyAsDoctor,
     verifyDoctorEmail,
     approveDoctor,
+    getAllDoctors,
 };
