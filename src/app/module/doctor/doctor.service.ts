@@ -2,6 +2,7 @@ import bcrypt from "bcryptjs";
 import type { UploadApiResponse } from "cloudinary";
 import crypto from "crypto";
 import ejs from "ejs";
+import httpStatus from "http-status";
 import path from "path";
 import { is, tr } from "zod/locales";
 import {
@@ -16,13 +17,12 @@ import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
 import { redisClient } from "../../lib/redis";
 import type { RequestUser } from "../../middleware/checkAuth";
+import { AppError } from "../../utils/AppError";
 import type {
 	IApplyAsDoctorPayload,
 	IApproveDoctorPayload,
 	IVerifyDoctorEmailPayload,
 } from "./doctor.interface";
-import { AppError } from "../../utils/AppError";
-import httpStatus from "http-status";
 
 const applyAsDoctor = async (
 	payload: IApplyAsDoctorPayload,
@@ -169,7 +169,8 @@ const verifyDoctorEmail = async (payload: IVerifyDoctorEmailPayload) => {
 	const redisOTP = await redisClient.get(otpKey);
 
 	if (!redisOTP) {
-		throw new AppError(httpStatus.BAD_REQUEST,
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
 			"OTP Expired. Your application window has been closed, please apply again.",
 		);
 	}
@@ -283,17 +284,22 @@ const approveDoctor = async (
 	}
 
 	if (existingDoctor.isDeleted) {
-		throw new AppError(httpStatus.NOT_FOUND, "Doctor Application Has Been Deleted!");
+		throw new AppError(
+			httpStatus.NOT_FOUND,
+			"Doctor Application Has Been Deleted!",
+		);
 	}
 
 	if (!existingDoctor.user.emailVerified) {
-		throw new AppError(httpStatus.BAD_REQUEST,
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
 			"Doctor email has not been varified yet. Application can not be reviewed!",
 		);
 	}
 
 	if (existingDoctor.verificationStatus !== DoctorVerificationStatus.PENDING) {
-		throw new AppError(httpStatus.BAD_REQUEST,
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
 			`Doctor Application Has Already Been ${existingDoctor.verificationStatus.toLowerCase()}`,
 		);
 	}
@@ -302,7 +308,8 @@ const approveDoctor = async (
 		verificationStatus === DoctorVerificationStatus.REJECTED &&
 		!rejectionReason
 	) {
-		throw new AppError(httpStatus.BAD_REQUEST,
+		throw new AppError(
+			httpStatus.BAD_REQUEST,
 			"Rejection reason is required when rejecting a doctor application.",
 		);
 	}

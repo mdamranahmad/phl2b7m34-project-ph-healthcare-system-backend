@@ -1,12 +1,12 @@
 import type { NextFunction, Request, Response } from "express";
+import httpStatus from "http-status";
 import type { JwtPayload } from "jsonwebtoken";
 import type { Role } from "../../generated/prisma/enums";
 import config from "../config";
 import { prisma } from "../lib/prisma";
+import { AppError } from "../utils/AppError";
 import { catchAsync } from "../utils/catchAsync";
 import { jwtUtils } from "../utils/jwt";
-import { AppError } from "../utils/AppError";
-import httpStatus from "http-status";
 
 export interface RequestUser {
 	email: string;
@@ -65,11 +65,17 @@ export const auth = (...requiredRoles: Role[]) => {
 		});
 
 		if (!user) {
-			throw new AppError(httpStatus.NOT_FOUND, "User not found. Please log in again.");
+			throw new AppError(
+				httpStatus.NOT_FOUND,
+				"User not found. Please log in again.",
+			);
 		}
 
 		if (user.status === "BLOCKED") {
-			throw new AppError(httpStatus.FORBIDDEN, "Your account has been blocked. Please contact support.");
+			throw new AppError(
+				httpStatus.FORBIDDEN,
+				"Your account has been blocked. Please contact support.",
+			);
 		}
 
 		req.user = {
