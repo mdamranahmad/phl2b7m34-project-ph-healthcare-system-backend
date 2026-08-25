@@ -21,6 +21,8 @@ import type {
 	IApproveDoctorPayload,
 	IVerifyDoctorEmailPayload,
 } from "./doctor.interface";
+import { AppError } from "../../utils/AppError";
+import httpStatus from "http-status";
 
 const applyAsDoctor = async (
 	payload: IApplyAsDoctorPayload,
@@ -34,7 +36,7 @@ const applyAsDoctor = async (
 	});
 
 	if (isUserExists) {
-		throw new Error("User Already Exists!");
+		throw new AppError(httpStatus.CONFLICT, "User Already Exists!");
 	}
 
 	const resumeUploadResult = await new Promise<UploadApiResponse>(
@@ -155,11 +157,11 @@ const verifyDoctorEmail = async (payload: IVerifyDoctorEmailPayload) => {
 	});
 
 	if (!isUserExists) {
-		throw new Error("Doctor Application Not Found!");
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor Application Not Found!");
 	}
 
 	if (isUserExists?.emailVerified) {
-		throw new Error("Email Already Varified!");
+		throw new AppError(httpStatus.BAD_REQUEST, "Email Already Varified!");
 	}
 
 	const otpKey = `doctor-application-otp: ${email}`;
@@ -167,13 +169,13 @@ const verifyDoctorEmail = async (payload: IVerifyDoctorEmailPayload) => {
 	const redisOTP = await redisClient.get(otpKey);
 
 	if (!redisOTP) {
-		throw new Error(
+		throw new AppError(httpStatus.BAD_REQUEST,
 			"OTP Expired. Your application window has been closed, please apply again.",
 		);
 	}
 
 	if (redisOTP !== otp) {
-		throw new Error("OTP does not match!");
+		throw new AppError(httpStatus.UNAUTHORIZED, "OTP does not match!");
 	}
 
 	await redisClient.del(otpKey);
@@ -277,21 +279,21 @@ const approveDoctor = async (
 	});
 
 	if (!existingDoctor) {
-		throw new Error("Doctor Application Not Found!");
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor Application Not Found!");
 	}
 
 	if (existingDoctor.isDeleted) {
-		throw new Error("Doctor Application Has Been Deleted!");
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor Application Has Been Deleted!");
 	}
 
 	if (!existingDoctor.user.emailVerified) {
-		throw new Error(
+		throw new AppError(httpStatus.BAD_REQUEST,
 			"Doctor email has not been varified yet. Application can not be reviewed!",
 		);
 	}
 
 	if (existingDoctor.verificationStatus !== DoctorVerificationStatus.PENDING) {
-		throw new Error(
+		throw new AppError(httpStatus.BAD_REQUEST,
 			`Doctor Application Has Already Been ${existingDoctor.verificationStatus.toLowerCase()}`,
 		);
 	}
@@ -300,7 +302,7 @@ const approveDoctor = async (
 		verificationStatus === DoctorVerificationStatus.REJECTED &&
 		!rejectionReason
 	) {
-		throw new Error(
+		throw new AppError(httpStatus.BAD_REQUEST,
 			"Rejection reason is required when rejecting a doctor application.",
 		);
 	}
