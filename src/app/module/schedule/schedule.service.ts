@@ -158,7 +158,7 @@ const getMySchedules = async (query: IQuery, user: RequestUser) => {
 		},
 	});
 
-	const totalSchedules = await prisma.schedule.count({
+	const total = await prisma.schedule.count({
 		where: { AND: andConditions },
 	});
 
@@ -167,8 +167,8 @@ const getMySchedules = async (query: IQuery, user: RequestUser) => {
 		meta: {
 			page,
 			limit,
-			totalSchedules,
-			totalPages: Math.ceil(totalSchedules / limit),
+			total,
+			totalPages: Math.ceil(total / limit),
 		},
 	};
 };
@@ -236,7 +236,7 @@ const getAllSchedules = async (query: IQuery) => {
 		},
 	});
 
-	const totalSchedules = await prisma.schedule.count({
+	const total = await prisma.schedule.count({
 		where: { AND: andConditions },
 	});
 
@@ -245,13 +245,13 @@ const getAllSchedules = async (query: IQuery) => {
 		meta: {
 			page,
 			limit,
-			totalSchedules,
-			totalPages: Math.ceil(totalSchedules / limit),
+			total,
+			totalPages: Math.ceil(total / limit),
 		},
 	};
 };
 
-const getSchedulesById = async (scheduleId: string) => {
+const getScheduleById = async (scheduleId: string) => {
 	const schedule = await prisma.schedule.findUnique({
 		where: {
 			id: scheduleId,
@@ -399,7 +399,7 @@ const updateSchedule = async (
 	return updatedSchedule;
 };
 
-const publishedShedule = async (scheduleId: string, user: RequestUser) => {
+const publisheSchedule = async (scheduleId: string, user: RequestUser) => {
 	const doctor = await prisma.doctor.findUnique({
 		where: { userId: user.userId },
 	});
@@ -431,7 +431,7 @@ const publishedShedule = async (scheduleId: string, user: RequestUser) => {
 	return publishedSchedule;
 };
 
-const deletedSchedule = async (scheduleId: string, user: RequestUser) => {
+const deleteSchedule = async (scheduleId: string, user: RequestUser) => {
 	const doctor = await prisma.doctor.findUnique({
 		where: { userId: user.userId },
 	});
@@ -521,7 +521,7 @@ const getTodaysSchedules = async (query: IQuery) => {
 		},
 	});
 
-	const totalSchedules = await prisma.schedule.count({
+	const total = await prisma.schedule.count({
 		where: { AND: andConditions },
 	});
 
@@ -530,8 +530,8 @@ const getTodaysSchedules = async (query: IQuery) => {
 		meta: {
 			page,
 			limit,
-			totalSchedules,
-			totalPages: Math.ceil(totalSchedules / limit),
+			total,
+			totalPages: Math.ceil(total / limit),
 		},
 	};
 };
@@ -540,9 +540,9 @@ export const ScheduleService = {
 	createSchedule,
 	getMySchedules,
 	getAllSchedules,
-	getSchedulesById,
+	getScheduleById,
 	updateSchedule,
-	publishedShedule,
-	deletedSchedule,
+	publisheSchedule,
+	deleteSchedule,
 	getTodaysSchedules,
 };
