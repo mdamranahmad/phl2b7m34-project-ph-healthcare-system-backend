@@ -1,4 +1,4 @@
-import { isBefore, isSameDay } from "date-fns";
+import { addMinutes, isBefore, isSameDay } from "date-fns";
 import httpStatus from "http-status";
 import {
 	AppointmentStatus,
@@ -7,6 +7,7 @@ import {
 } from "../../../generated/prisma/enums";
 import config from "../../config";
 import { getBkashIdToken } from "../../lib/bkash";
+import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
 import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
@@ -515,13 +516,41 @@ const bookAppointmentCallback = async (query: Record<string, any>) => {
 		const executedPaymentResult = await executedPaymentResponse.json();
 
 		if (status === "success") {
+			const appointment = await prisma.appointment.findUnique({
+				where: { id: executedPaymentResult.merchantInvoiceNumber },
+				include: { schedule: true, patient: true },
+			});
+
+			if (!appointment) {
+				throw new AppError(httpStatus.NOT_FOUND, "Appointment Not Found!");
+			}
+
+			const serialNumber =
+				appointment.schedule.totalSlots -
+				appointment.schedule.availableSlots +
+				1;
+
+			const joiningTime = addMinutes(
+				appointment.schedule.startDateTime,
+				serialNumber - 1 * 20,
+			);
+
 			await tx.appointment.update({
 				where: {
 					id: executedPaymentResult.merchantInvoiceNumber,
 				},
 				data: {
 					status: AppointmentStatus.CONFIRMED,
+					joiningTime,
+					serialNumber,
 				},
+			});
+
+			const newAvailableSlots = appointment.schedule.availableSlots - 1;
+
+			await prisma.schedule.update({
+				where: { id: appointment.schedule.id },
+				data: { availableSlots: newAvailableSlots },
 			});
 
 			await tx.payment.update({
@@ -535,6 +564,13 @@ const bookAppointmentCallback = async (query: Record<string, any>) => {
 					paidAt: executedPaymentResult.paymentExecuteTime,
 					gatewayResponse: executedPaymentResult,
 				},
+			});
+
+			await transporter.sendMail({
+				from: config.email_sender,
+				to: appointment.patient.email,
+				subject: "Your Appointment Invoice - PH Healthcare System", 
+				text: "Thank you for booking an appointment. Please find your invoice attached.",
 			});
 
 			return {
