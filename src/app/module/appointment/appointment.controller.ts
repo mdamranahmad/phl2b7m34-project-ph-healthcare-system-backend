@@ -18,34 +18,6 @@ const bookAppointment = catchAsync(async (req: Request, res: Response) => {
 	});
 });
 
-const payAppointment = catchAsync(async (req: Request, res: Response) => {
-	const payload = req.body;
-	const user = req.user!;
-
-	const result = await AppointmentService.payAppointment(payload, user);
-
-	sendResponse(res, {
-		statusCode: httpStatus.OK,
-		success: true,
-		message: "Payment Process for Unpaid Appointment Initiated Successfully.",
-		data: result,
-	});
-});
-
-const cancelAppointment = catchAsync(async (req: Request, res: Response) => {
-	const payload = req.body;
-	// const user = req.user!;
-
-	const result = await AppointmentService.cancelAppointment(payload);
-
-	sendResponse(res, {
-		statusCode: httpStatus.OK,
-		success: true,
-		message: "Appointment Cancelled and Refunded Successfully.",
-		data: result,
-	});
-});
-
 const bookAppointmentCallback = catchAsync(
 	async (req: Request, res: Response) => {
 		console.log("req.query: ", req.query);
@@ -64,9 +36,128 @@ const bookAppointmentCallback = catchAsync(
 	},
 );
 
+const payAppointment = catchAsync(async (req: Request, res: Response) => {
+	const payload = req.body;
+	const user = req.user!;
+
+	const result = await AppointmentService.payAppointment(payload, user);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Payment Process for Unpaid Appointment Initiated Successfully.",
+		data: result,
+	});
+});
+
+const cancelAppointment = catchAsync(async (req: Request, res: Response) => {
+	const payload = req.body;
+	const user = req.user!;
+
+	const result = await AppointmentService.cancelAppointment(payload, user);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Appointment Cancelled and Refunded Successfully.",
+		data: result,
+	});
+});
+
+const updateAppointmentStatus = catchAsync(
+	async (req: Request, res: Response) => {
+		const appointmentId = req.params.appointmentId as string;
+		const payload = req.body;
+		const user = req.user!;
+
+		const result = await AppointmentService.updateAppointmentStatus(
+			appointmentId,
+			payload,
+			user,
+		);
+
+		sendResponse(res, {
+			statusCode: httpStatus.OK,
+			success: true,
+			message: "Appointment Status Updated Successfully.",
+			data: result,
+		});
+	},
+);
+
+const getMyAppointments = catchAsync(async (req: Request, res: Response) => {
+	const user = req.user!;
+
+	const { data, meta } = await AppointmentService.getMyAppointments(
+		req.query,
+		user,
+	);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Appointments Retrieved Successfully.",
+		data: data,
+		meta: meta,
+	});
+});
+
+const getDoctorAppointments = catchAsync(
+	async (req: Request, res: Response) => {
+		const user = req.user!;
+
+		const { data, meta } = await AppointmentService.getDoctorAppointments(
+			req.query,
+			user,
+		);
+
+		sendResponse(res, {
+			statusCode: httpStatus.OK,
+			success: true,
+			message: "Appointments Retrieved Successfully.",
+			data: data,
+			meta: meta,
+		});
+	},
+);
+
+const getAllAppointments = catchAsync(async (req: Request, res: Response) => {
+	const { data, meta } = await AppointmentService.getAllAppointments(req.query);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Appointments Retrieved Successfully.",
+		data: data,
+		meta: meta,
+	});
+});
+
+const getSingleAppointment = catchAsync(async (req: Request, res: Response) => {
+	const appointmentId = req.params.appointmentId as string;
+	const user = req.user!;
+
+	const result = await AppointmentService.getSingleAppointment(
+		appointmentId,
+		user,
+	);
+
+	sendResponse(res, {
+		statusCode: httpStatus.OK,
+		success: true,
+		message: "Appointments Retrieved Successfully.",
+		data: result,
+	});
+});
+
 export const AppointmentController = {
 	bookAppointment,
 	bookAppointmentCallback,
 	payAppointment,
 	cancelAppointment,
+	updateAppointmentStatus,
+	getMyAppointments,
+	getDoctorAppointments,
+	getAllAppointments,
+	getSingleAppointment,
 };
