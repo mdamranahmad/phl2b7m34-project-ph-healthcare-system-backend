@@ -12,7 +12,12 @@ import { transporter } from "../../lib/nodemailer";
 import { prisma } from "../../lib/prisma";
 import type { RequestUser } from "../../middleware/checkAuth";
 import { AppError } from "../../utils/AppError";
-import type { IBookAppointmentPayload } from "./appointment.interface";
+import type {
+	IBookAppointmentPayload,
+	ICancelAppointmentPayload,
+	IPayAppointmentPayload,
+	IUpdateAppointmentStatusPayload,
+} from "./appointment.interface";
 
 const bookAppointment = async (
 	payload: IBookAppointmentPayload,
@@ -180,7 +185,10 @@ const bookAppointment = async (
 	return transactionResult;
 };
 
-const payAppointment = async (payload: any, user: RequestUser) => {
+const payAppointment = async (
+	payload: IPayAppointmentPayload,
+	user: RequestUser,
+) => {
 	const appointmentId = payload.appointmentId;
 
 	const existingAppointment = await prisma.appointment.findUnique({
@@ -282,7 +290,10 @@ const payAppointment = async (payload: any, user: RequestUser) => {
 	};
 };
 
-const cancelAppointment = async (payload: any, user: RequestUser) => {
+const cancelAppointment = async (
+	payload: ICancelAppointmentPayload,
+	user: RequestUser,
+) => {
 	const transactionResult = await prisma.$transaction(async (tx) => {
 		const appointmentId = payload.appointmentId;
 
@@ -405,6 +416,88 @@ const cancelAppointment = async (payload: any, user: RequestUser) => {
 	});
 
 	return transactionResult;
+};
+
+// Doctor Only API Confirmed => Ongoing => Completed
+const updateAppointmentStatus = async (
+	appointmentId: string,
+	payload: IUpdateAppointmentStatusPayload,
+	user: RequestUser,
+) => {
+	const doctor = await prisma.doctor.findUnique({
+		where: { userId: user.userId },
+	});
+
+	if (!doctor) {
+		throw new AppError(httpStatus.NOT_FOUND, "Doctor Profile Not Found!");
+	}
+
+	const appointment = await prisma.appointment.findUnique({
+		where: { id: appointmentId, doctorId: doctor.id },
+	});
+
+	if (!appointment) {
+		throw new AppError(httpStatus.NOT_FOUND, "Appointment Not Found!");
+	}
+
+	if (appointment.status === AppointmentStatus.COMPLETED) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Appointment is already completed!",
+		);
+	}
+
+	if (appointment.status === AppointmentStatus.CANCELLED) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Appointment is already cancelled!",
+		);
+	}
+
+	if (appointment.status === AppointmentStatus.PENDING) {
+		throw new AppError(
+			httpStatus.FORBIDDEN,
+			"Appointment is still pending. Status can be changed once appointment is confirmed!",
+		);
+	}
+
+	if (appointment.status === AppointmentStatus.CONFIRMED) {
+		if (payload.status !== "ONGOING") {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Confirmed appointment must be ongoing at first!",
+			);
+		}
+
+		await prisma.appointment.update({
+			where: { id: appointment?.id },
+			data: {
+				status: AppointmentStatus.ONGOING,
+			},
+		});
+	}
+
+	if (appointment.status === AppointmentStatus.ONGOING) {
+		if (payload.status !== "COMPLETED") {
+			throw new AppError(
+				httpStatus.BAD_REQUEST,
+				"Ongoing appointment must be completed!",
+			);
+		}
+
+		await prisma.appointment.update({
+			where: { id: appointment?.id },
+			data: {
+				status: AppointmentStatus.COMPLETED,
+			},
+		});
+	}
+
+	const updatedAppointment = await prisma.appointment.findUnique({
+		where: { id: appointment.id },
+	});
+
+	return updatedAppointment;
 };
 
 // Working Api, Fixed by Gemini
@@ -700,6 +793,7 @@ export const AppointmentService = {
 	bookAppointmentCallback,
 	payAppointment,
 	cancelAppointment,
+	updateAppointmentStatus,
 };
 
 /**
