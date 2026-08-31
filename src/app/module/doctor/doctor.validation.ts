@@ -55,3 +55,19 @@ export const ApplyAsDoctorZSchema = z.object({
 		contactNumber: z.string().optional(),
 	}),
 });
+
+export const UpdateDoctorProfileZSchema = z.object({
+	address: z.string().optional(),
+
+	bio: z.string().optional(),
+
+	// Coerce string to number for FormData inputs
+	consultationFee: z.coerce
+		.number({
+			message: "Consultation fee must be a valid number",
+		})
+		.positive("Consultation fee must be a positive number")
+		.optional(),
+
+	contactNumber: z.string().optional(),
+});
