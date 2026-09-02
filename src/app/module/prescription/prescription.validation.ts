@@ -8,7 +8,7 @@ export const CreatePrescriptionValidationZSchema = z.object({
 		.trim()
 		.min(5, "Findings Must Be Atleast 5 Characters Long!"),
 
-	medicine: z
+	medicines: z
 		.array(
 			z.object({
 				name: z.string().trim().min(1, "Medicine Name Is Required!"),

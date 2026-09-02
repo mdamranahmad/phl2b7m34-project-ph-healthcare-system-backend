@@ -454,7 +454,7 @@ const getAllDoctors = async (query: IQuery) => {
 		skip: skip,
 
 		orderBy: {
-			[sortOrder]: sortBy,
+			[sortBy]: sortOrder,
 		},
 		include: {
 			user: {
@@ -520,7 +520,8 @@ const getAvailableDoctorsByTodaysSchedule = async (query: IQuery) => {
 
 	const andConditions: DoctorWhereInput[] = [
 		{ isDeleted: false },
-		{ verificationStatus: DoctorVerificationStatus.APPROVED },
+		{ verificationStatus: DoctorVerificationStatus.APPROVED }, // Commented for test Purpose
+		// { verificationStatus: DoctorVerificationStatus.PENDING },
 		{
 			shcedules: {
 				some: {
@@ -604,7 +605,7 @@ const getAvailableDoctorsByTodaysSchedule = async (query: IQuery) => {
 		skip: skip,
 
 		orderBy: {
-			[sortOrder]: sortBy,
+			[sortBy]: sortOrder,
 		},
 		select: {
 			id: true,

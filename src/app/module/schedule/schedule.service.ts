@@ -29,14 +29,14 @@ const createSchedule = async (
 		throw new AppError(httpStatus.NOT_FOUND, "Doctor Profile Not Found!");
 	}
 
-	if (!isSameDay(payload.startDateTime, payload.endtDateTime)) {
+	if (!isSameDay(payload.endDateTime, payload.startDateTime)) {
 		throw new AppError(
 			httpStatus.CONFLICT,
 			"Schedule must start and end on the same calendar day!",
 		);
 	}
 
-	if (isAfter(payload.startDateTime, payload.endtDateTime)) {
+	if (isAfter(payload.startDateTime, payload.endDateTime)) {
 		throw new AppError(
 			httpStatus.CONFLICT,
 			"Start Date Time Can Not Be After End Date Time!",
@@ -57,7 +57,7 @@ const createSchedule = async (
 		},
 	});
 
-	if (!existingScheduleOnThisDate) {
+	if (existingScheduleOnThisDate) {
 		throw new AppError(
 			httpStatus.CONFLICT,
 			"You already have a schedule for this date!",
@@ -65,8 +65,8 @@ const createSchedule = async (
 	}
 
 	const durationInMinutes = differenceInMinutes(
+		payload.endDateTime,
 		payload.startDateTime,
-		payload.endtDateTime,
 	);
 
 	const MINUTES_ALLOCATED_PER_SLOT = 20;
@@ -76,7 +76,7 @@ const createSchedule = async (
 	const schedule = await prisma.schedule.create({
 		data: {
 			startDateTime: payload.startDateTime,
-			endDateTime: payload.endtDateTime,
+			endDateTime: payload.endDateTime,
 			meetingLink: payload.meetingLink,
 			totalSlots,
 			availableSlots: totalSlots,
@@ -329,16 +329,16 @@ const updateSchedule = async (
 
 	payload.meetingLink = payload.meetingLink || schedule.meetingLink;
 	payload.startDateTime = payload.startDateTime || schedule.startDateTime;
-	payload.endtDateTime = payload.endtDateTime || schedule.endDateTime;
+	payload.endDateTime = payload.endDateTime || schedule.endDateTime;
 
-	if (!isSameDay(payload.startDateTime, payload.endtDateTime)) {
+	if (!isSameDay(payload.startDateTime, payload.endDateTime)) {
 		throw new AppError(
 			httpStatus.CONFLICT,
 			"Schedule must start and end on the same calendar day!",
 		);
 	}
 
-	if (isAfter(payload.startDateTime, payload.endtDateTime)) {
+	if (isAfter(payload.startDateTime, payload.endDateTime)) {
 		throw new AppError(
 			httpStatus.CONFLICT,
 			"Start Date Time Can Not Be After End Date Time!",
@@ -368,7 +368,7 @@ const updateSchedule = async (
 
 	const durationInMinutes = differenceInMinutes(
 		payload.startDateTime,
-		payload.endtDateTime,
+		payload.endDateTime,
 	);
 
 	const MINUTES_ALLOCATED_PER_SLOT = 20;
@@ -379,7 +379,7 @@ const updateSchedule = async (
 		where: { id: schedule.id },
 		data: {
 			startDateTime: payload.startDateTime,
-			endDateTime: payload.endtDateTime,
+			endDateTime: payload.endDateTime,
 			meetingLink: payload.meetingLink,
 			totalSlots,
 			availableSlots: totalSlots,
@@ -494,7 +494,7 @@ const getTodaysSchedules = async (query: IQuery) => {
 	const startOfTomorrow = addDays(startOfToday, 1);
 
 	const andConditions: ScheduleWhereInput[] = [
-		{ doctorId: query.doctorId },
+		{ doctorId: doctor.id },
 		{ isDeleted: false },
 		{ status: ScheduleStatus.PUBLISHED },
 		{

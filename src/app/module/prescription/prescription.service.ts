@@ -23,7 +23,7 @@ const createPrescription = async (
 	}
 
 	const appointment = await prisma.appointment.findUnique({
-		where: { id: payload.appointmentId, doctorId: user.userId },
+		where: { id: payload.appointmentId, doctorId: doctor.id },
 		include: { patient: true },
 	});
 

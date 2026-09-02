@@ -44,7 +44,7 @@ router.patch(
 
 router.get(
 	"/doctors-available-today",
-	auth(Role.PATIENT),
+	auth(Role.PATIENT, Role.ADMIN, Role.SUPER_ADMIN, Role.DOCTOR),
 	DoctorController.getAvailableDoctorsByTodaysSchedule,
 );
 
