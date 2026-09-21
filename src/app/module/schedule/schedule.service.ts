@@ -23,6 +23,7 @@ const createSchedule = async (
 ) => {
 	const doctor = await prisma.doctor.findUnique({
 		where: { userId: user.userId },
+		
 	});
 
 	if (!doctor) {
