@@ -8,35 +8,36 @@ import { UserValidation } from "./auth.validation";
 const router = Router();
 
 router.post(
-	"/register",
-	validateRequest(UserValidation.PatientRegistrationZSchema),
-	AuthController.registerPatient,
+    "/register",
+    validateRequest(UserValidation.PatientRegistrationZSchema),
+    AuthController.registerPatient,
 );
 router.post(
-	"/verify-email",
-	validateRequest(UserValidation.PatientEmailVerifyZSchema),
-	AuthController.verifyPatientEmail,
+    "/verify-email",
+    validateRequest(UserValidation.PatientEmailVerifyZSchema),
+    AuthController.verifyPatientEmail,
 );
 router.post(
-	"/login",
-	validateRequest(UserValidation.LoginZSchema),
-	AuthController.loginUser,
+    "/login",
+    validateRequest(UserValidation.LoginZSchema),
+    AuthController.loginUser,
 );
 router.get(
-	"/me",
-	auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
-	AuthController.getMe,
+    "/me",
+    auth(Role.ADMIN, Role.DOCTOR, Role.PATIENT, Role.SUPER_ADMIN),
+    AuthController.getMe,
 );
 router.post("/refresh-token", AuthController.refreshToken);
 router.post("/google", AuthController.googleLogin);
 router.post(
-	"/forget-password",
-	validateRequest(UserValidation.ForgetPasswordZSchema),
-	AuthController.forgetPassword,
+    "/forget-password",
+    validateRequest(UserValidation.ForgetPasswordZSchema),
+    AuthController.forgetPassword,
 );
 router.post(
-	"/reset-password",
-	validateRequest(UserValidation.ResetPasswordZSchema),
-	AuthController.resetPassword,
+    "/reset-password",
+    validateRequest(UserValidation.ResetPasswordZSchema),
+    AuthController.resetPassword,
 );
+router.post("/logout", AuthController.logout);
 export const AuthRoutes = router;
