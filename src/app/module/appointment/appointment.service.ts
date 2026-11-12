@@ -61,12 +61,12 @@ const bookAppointment = async (
 			);
 		}
 
-		if (!isBefore(now, schedule.startDateTime)) {
-			throw new AppError(
-				httpStatus.BAD_REQUEST,
-				"This Schedule Already Passed!",
-			);
-		}
+		// if (!isBefore(now, schedule.startDateTime)) {
+		// 	throw new AppError(
+		// 		httpStatus.BAD_REQUEST,
+		// 		"This Schedule Already Passed!",
+		// 	);
+		// }
 
 		const existingAppointment = await prisma.appointment.findFirst({
 			where: {

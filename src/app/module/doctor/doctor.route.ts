@@ -50,13 +50,13 @@ router.get(
 
 router.get(
 	"/all-doctors-public",
-	auth(Role.PATIENT),
+	// auth(Role.PATIENT), // for test purpose, making the route truly public
 	DoctorController.getAllDoctorsListPublic,
 );
 
 router.get(
 	"/:doctorId",
-	auth(Role.PATIENT),
+	// auth(Role.PATIENT), // for test purpose, making the route truly public
 	DoctorController.getSingleDoctorPublicProfile,
 );
 

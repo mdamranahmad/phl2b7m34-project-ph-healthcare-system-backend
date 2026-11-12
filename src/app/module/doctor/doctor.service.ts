@@ -26,11 +26,366 @@ import type {
     IUpdateDoctorProfilePayload,
     IVerifyDoctorEmailPayload,
 } from "./doctor.interface";
+import generateRandomPassword from "../../utils/randomPassword";
+
+// const applyAsDoctor = async (
+//     payload: IApplyAsDoctorPayload,
+//     resume: Express.Multer.File | null,
+//     additinalfiles: Express.Multer.File[],
+// ) => {
+//     const isUserExists = await prisma.user.findUnique({
+//         where: {
+//             email: payload.user.email,
+//         },
+//     });
+
+//     if (isUserExists) {
+//         throw new AppError(httpStatus.CONFLICT, "User Already Exists!");
+//     }
+
+//     const resumeUploadResult = await new Promise<UploadApiResponse>(
+//         (resolve, reject) => {
+//             cloudinary.uploader
+//                 .upload_stream(
+//                     {
+//                         resource_type: "auto",
+//                     },
+//                     async (error, result) => {
+//                         if (error) {
+//                             return reject(error);
+//                         }
+
+//                         if (!result) {
+//                             return reject(
+//                                 new Error(
+//                                     "No result returned from Cloudinary!",
+//                                 ),
+//                             );
+//                         }
+
+//                         resolve(result);
+//                     },
+//                 )
+//                 .end(resume?.buffer);
+//         },
+//     );
+
+//     const additionalFilesUploadResults = await Promise.all(
+//         additinalfiles.map((file) => {
+//             return new Promise<UploadApiResponse>((resolve, reject) => {
+//                 cloudinary.uploader
+//                     .upload_stream(
+//                         { resource_type: "auto" },
+//                         async (error, result) => {
+//                             if (error) {
+//                                 return reject(error);
+//                             }
+
+//                             if (!result) {
+//                                 return reject(
+//                                     new Error(
+//                                         "No result returned from Cloudinary!",
+//                                     ),
+//                                 );
+//                             }
+
+//                             resolve(result);
+//                         },
+//                     )
+//                     .end(file.buffer);
+//             });
+//         }),
+//     );
+
+//     const randomDoctorPassword = "123456Aa";
+
+//     const hashedPassword = await bcrypt.hash(
+//         randomDoctorPassword,
+//         Number(config.bcrypt_salt_rounds),
+//     );
+
+//     const doctorApplication = await prisma.user.create({
+//         data: {
+//             ...payload.user,
+//             password: hashedPassword,
+//             role: Role.DOCTOR,
+//             needPasswordChange: true,
+//             doctor: {
+//                 create: {
+//                     name: payload.user.name,
+//                     email: payload.user.email,
+//                     ...payload.doctor,
+//                     resume: resumeUploadResult.secure_url,
+//                     resumePublicId: resumeUploadResult.public_id,
+//                     additionalFiles: additionalFilesUploadResults.map(
+//                         (file) => ({
+//                             url: file.secure_url,
+//                             publicId: file.public_id,
+//                         }),
+//                     ),
+//                 },
+//             },
+//         },
+//         include: {
+//             doctor: true,
+//         },
+//     });
+
+//     const expirationSeconds = 60 * 60;
+
+//     const otpKey = `doctor-application-otp: ${payload.user.email}`;
+
+//     const otpValue = crypto.randomInt(100000, 1000000).toString();
+
+//     if (config.node_env === "development") {
+//         console.log(`[dev] ${payload.user.email} : ${otpValue}`);
+//     }
+
+//     await redisClient.set(otpKey, otpValue, {
+//         expiration: { type: "EX", value: expirationSeconds },
+//     });
+
+//     const templatePath = path.join(
+//         process.cwd(),
+//         "src/app/templates/registration-user-otp.ejs",
+//     );
+
+//     const templateData = {
+//         name: payload.user.name,
+//         email: payload.user.email,
+//         OTP: otpValue,
+//         expiresIn: expirationSeconds / 60,
+//     };
+
+//     const html = await ejs.renderFile(templatePath, templateData);
+
+//     await transporter.sendMail({
+//         from: config.email_sender,
+//         to: payload.user.email,
+//         subject: "Email Verification",
+//         html,
+//     });
+
+//     return doctorApplication;
+// };
+
+// const verifyDoctorEmail = async (payload: IVerifyDoctorEmailPayload) => {
+//     const email = payload.email.trim().toLowerCase();
+//     const otp = payload.otp;
+
+//     const isUserExists = await prisma.user.findUnique({
+//         where: { email, role: Role.DOCTOR },
+//     });
+
+//     if (!isUserExists) {
+//         throw new AppError(
+//             httpStatus.NOT_FOUND,
+//             "Doctor Application Not Found!",
+//         );
+//     }
+
+//     if (isUserExists?.emailVerified) {
+//         throw new AppError(httpStatus.BAD_REQUEST, "Email Already Varified!");
+//     }
+
+//     const otpKey = `doctor-application-otp: ${email}`;
+
+//     const redisOTP = await redisClient.get(otpKey);
+
+//     if (!redisOTP) {
+//         throw new AppError(
+//             httpStatus.BAD_REQUEST,
+//             "OTP Expired. Your application window has been closed, please apply again.",
+//         );
+//     }
+
+//     if (redisOTP !== otp) {
+//         throw new AppError(httpStatus.UNAUTHORIZED, "OTP does not match!");
+//     }
+
+//     await redisClient.del(otpKey);
+
+//     const verifiedDoctor = await prisma.user.update({
+//         where: { id: isUserExists.id },
+//         data: {
+//             emailVerified: true,
+//         },
+//         omit: { password: true },
+//         include: { doctor: true },
+//     });
+
+//     return verifiedDoctor;
+
+//     // const patientRegistrationKey = `patient-registration-data: ${email}`;
+//     // const redisPatientData = await redisClient.get(patientRegistrationKey);
+//     // if (!redisPatientData) {
+//     // 	throw new Error("Invalid Patient Data!");
+//     // }
+//     // const patientPayload: IRegisterPatientPayload = JSON.parse(redisPatientData);
+//     // const createdUser = await prisma.user.create({
+//     // 	data: {
+//     // 		name: patientPayload.name,
+//     // 		email: patientPayload.email,
+//     // 		password: patientPayload.password,
+//     // 		role: Role.PATIENT,
+//     // 		status: UserStatus.ACTIVE,
+//     // 		emailVerified: true,
+//     // 		patient: {
+//     // 			create: {
+//     // 				name: patientPayload.name,
+//     // 				email: patientPayload.email,
+//     // 				contactNumber: patientPayload.patient.contactNumber || "",
+//     // 			},
+//     // 		},
+//     // 	},
+//     // 	omit: { password: true },
+//     // 	include: { patient: true },
+//     // });
+//     // await redisClient.del(patientRegistrationKey);
+//     // const templatePath = path.join(
+//     // 	process.cwd(),
+//     // 	"src/app/templates/patient-welcome-email.ejs",
+//     // );
+//     // const templateData = {
+//     // 	name: createdUser.name,
+//     // };
+//     // const html = await ejs.renderFile(templatePath, templateData);
+//     // await transporter.sendMail({
+//     // 	from: config.email_sender,
+//     // 	to: createdUser.email,
+//     // 	subject: "Welcome to PH Healthcare System!",
+//     // 	html,
+//     // });
+//     // const { patient, ...user } = createdUser;
+//     // const jwtPayload = {
+//     // 	userId: user.id,
+//     // 	name: user.name,
+//     // 	email: user.email,
+//     // 	role: user.role,
+//     // };
+//     // const accessToken = jwtUtils.createToken(
+//     // 	jwtPayload,
+//     // 	config.jwt_access_secret,
+//     // 	config.jwt_access_expires_in as SignOptions,
+//     // );
+//     // const refreshToken = jwtUtils.createToken(
+//     // 	jwtPayload,
+//     // 	config.jwt_refresh_secret,
+//     // 	config.jwt_refresh_expires_in as SignOptions,
+//     // );
+//     // return {
+//     // 	user,
+//     // 	patient,
+//     // 	accessToken,
+//     // 	refreshToken,
+//     // };
+
+//     // if (isUserExists?.status === "BLOCKED") {
+//     // 	throw new Error("User is Blocked!");
+//     // }
+//     // if (isUserExists?.isDeleted || isUserExists?.status === "DELETED") {
+//     // 	throw new Error("User is Deleted!");
+//     // }
+//     // // if (isUserExists.googleId && isUserExists.authProvider === "GOOGLE") {
+//     // //     throw new Error("User Has Account With Google!");
+//     // // }
+//     //
+// };
+
+// const approveDoctor = async (
+//     payload: IApproveDoctorPayload,
+//     reviewer: RequestUser,
+// ) => {
+//     const { doctorId, verificationStatus, rejectionReason } = payload;
+
+//     const existingDoctor = await prisma.doctor.findUnique({
+//         where: { id: doctorId },
+//         include: { user: true },
+//     });
+
+//     if (!existingDoctor) {
+//         throw new AppError(
+//             httpStatus.NOT_FOUND,
+//             "Doctor Application Not Found!",
+//         );
+//     }
+
+//     if (existingDoctor.isDeleted) {
+//         throw new AppError(
+//             httpStatus.NOT_FOUND,
+//             "Doctor Application Has Been Deleted!",
+//         );
+//     }
+
+//     if (!existingDoctor.user.emailVerified) {
+//         throw new AppError(
+//             httpStatus.BAD_REQUEST,
+//             "Doctor email has not been varified yet. Application can not be reviewed!",
+//         );
+//     }
+
+//     if (
+//         existingDoctor.verificationStatus !== DoctorVerificationStatus.PENDING
+//     ) {
+//         throw new AppError(
+//             httpStatus.BAD_REQUEST,
+//             `Doctor Application Has Already Been ${existingDoctor.verificationStatus.toLowerCase()}`,
+//         );
+//     }
+
+//     if (
+//         verificationStatus === DoctorVerificationStatus.REJECTED &&
+//         !rejectionReason
+//     ) {
+//         throw new AppError(
+//             httpStatus.BAD_REQUEST,
+//             "Rejection reason is required when rejecting a doctor application.",
+//         );
+//     }
+
+//     const updateDoctor = await prisma.doctor.update({
+//         where: { id: doctorId },
+//         data: {
+//             verificationStatus,
+//             rejectionReason:
+//                 verificationStatus === DoctorVerificationStatus.REJECTED
+//                     ? rejectionReason
+//                     : null,
+//             reviewedBy: reviewer.userId,
+//             reviewedAt: new Date(),
+//         },
+//     });
+
+//     const isApproved = verificationStatus === DoctorVerificationStatus.APPROVED;
+
+//     const templatePath = path.join(
+//         process.cwd(),
+//         `src/app/templates/${isApproved ? "doctor-application-approved.ejs" : "doctor-application-rejected.ejs"}`,
+//     );
+
+//     const templateData = {
+//         name: updateDoctor.name,
+//         reason: updateDoctor.rejectionReason,
+//     };
+
+//     const html = await ejs.renderFile(templatePath, templateData);
+
+//     await transporter.sendMail({
+//         from: config.email_sender,
+//         to: updateDoctor.email,
+//         subject: isApproved
+//             ? "Your Doctor Application Has Been Approved"
+//             : "Your Doctor Application Has Been rejected",
+//         html,
+//     });
+
+//     return updateDoctor;
+// };
 
 const applyAsDoctor = async (
     payload: IApplyAsDoctorPayload,
     resume: Express.Multer.File | null,
-    additinalfiles: Express.Multer.File[],
+    additionalFiles: Express.Multer.File[],
 ) => {
     const isUserExists = await prisma.user.findUnique({
         where: {
@@ -39,7 +394,10 @@ const applyAsDoctor = async (
     });
 
     if (isUserExists) {
-        throw new AppError(httpStatus.CONFLICT, "User Already Exists!");
+        throw new AppError(
+            httpStatus.CONFLICT,
+            "User Already Exists With This Email",
+        );
     }
 
     const resumeUploadResult = await new Promise<UploadApiResponse>(
@@ -49,6 +407,7 @@ const applyAsDoctor = async (
                     {
                         resource_type: "auto",
                     },
+
                     async (error, result) => {
                         if (error) {
                             return reject(error);
@@ -56,8 +415,9 @@ const applyAsDoctor = async (
 
                         if (!result) {
                             return reject(
-                                new Error(
-                                    "No result returned from Cloudinary!",
+                                new AppError(
+                                    httpStatus.INTERNAL_SERVER_ERROR,
+                                    "No result returned from Cloudinary",
                                 ),
                             );
                         }
@@ -69,12 +429,17 @@ const applyAsDoctor = async (
         },
     );
 
+    console.log({ resumeUploadResult });
+
     const additionalFilesUploadResults = await Promise.all(
-        additinalfiles.map((file) => {
+        additionalFiles.map((file) => {
             return new Promise<UploadApiResponse>((resolve, reject) => {
                 cloudinary.uploader
                     .upload_stream(
-                        { resource_type: "auto" },
+                        {
+                            resource_type: "auto",
+                        },
+
                         async (error, result) => {
                             if (error) {
                                 return reject(error);
@@ -83,7 +448,7 @@ const applyAsDoctor = async (
                             if (!result) {
                                 return reject(
                                     new Error(
-                                        "No result returned from Cloudinary!",
+                                        "No result returned from Cloudinary",
                                     ),
                                 );
                             }
@@ -96,17 +461,18 @@ const applyAsDoctor = async (
         }),
     );
 
-    const randomDoctorPassword = "123456Aa";
+    console.log({ additionalFilesUploadResults });
 
-    const hashedPassword = await bcrypt.hash(
-        randomDoctorPassword,
-        Number(config.bcrypt_salt_rounds),
-    );
+    // const randomDoctorPassword = Math.random().toString(36).slice(-8);
+
+    // const hashedPassword = await bcrypt.hash(
+    // 	randomDoctorPassword,
+    // 	Number(config.bcrypt_salt_rounds),
+    // );
 
     const doctorApplication = await prisma.user.create({
         data: {
             ...payload.user,
-            password: hashedPassword,
             role: Role.DOCTOR,
             needPasswordChange: true,
             doctor: {
@@ -125,6 +491,7 @@ const applyAsDoctor = async (
                 },
             },
         },
+
         include: {
             doctor: true,
         },
@@ -132,19 +499,22 @@ const applyAsDoctor = async (
 
     const expirationSeconds = 60 * 60;
 
-    const otpKey = `doctor-application-otp: ${payload.user.email}`;
-
+    const otpKey = `doctor-application-otp:${payload.user.email}`;
     const otpValue = crypto.randomInt(100000, 1000000).toString();
 
-    if (config.node_env === "development") {
-        console.log(`[dev] ${payload.user.email} : ${otpValue}`);
-    }
+    if (config.node_env === "development")
+        console.log(
+            `[dev] Doctor application OTP for ${payload.user.email}: ${otpValue}`,
+        );
 
     await redisClient.set(otpKey, otpValue, {
-        expiration: { type: "EX", value: expirationSeconds },
+        expiration: {
+            type: "EX",
+            value: expirationSeconds,
+        },
     });
 
-    const templatePath = path.join(
+    const tempatePath = path.join(
         process.cwd(),
         "src/app/templates/registration-user-otp.ejs",
     );
@@ -156,12 +526,12 @@ const applyAsDoctor = async (
         expiresIn: expirationSeconds / 60,
     };
 
-    const html = await ejs.renderFile(templatePath, templateData);
+    const html = await ejs.renderFile(tempatePath, templateData);
 
     await transporter.sendMail({
         from: config.email_sender,
         to: payload.user.email,
-        subject: "Email Verification",
+        subject: "Doctor Application - Email Verification",
         html,
     });
 
@@ -169,126 +539,49 @@ const applyAsDoctor = async (
 };
 
 const verifyDoctorEmail = async (payload: IVerifyDoctorEmailPayload) => {
-    const email = payload.email.trim().toLowerCase();
     const otp = payload.otp;
+    const email = payload.email.trim().toLowerCase();
 
-    const isUserExists = await prisma.user.findUnique({
+    const existingUser = await prisma.user.findUnique({
         where: { email, role: Role.DOCTOR },
     });
 
-    if (!isUserExists) {
+    if (!existingUser) {
         throw new AppError(
             httpStatus.NOT_FOUND,
-            "Doctor Application Not Found!",
+            "Doctor Application Not Found. Please Apply Again.",
         );
     }
 
-    if (isUserExists?.emailVerified) {
-        throw new AppError(httpStatus.BAD_REQUEST, "Email Already Varified!");
+    if (existingUser.emailVerified) {
+        throw new AppError(httpStatus.CONFLICT, "Email Already Verified");
     }
 
-    const otpKey = `doctor-application-otp: ${email}`;
+    const otpKey = `doctor-application-otp:${email}`;
 
-    const redisOTP = await redisClient.get(otpKey);
+    const redisOtp = await redisClient.get(otpKey);
 
-    if (!redisOTP) {
+    if (!redisOtp) {
         throw new AppError(
             httpStatus.BAD_REQUEST,
-            "OTP Expired. Your application window has been closed, please apply again.",
+            "OTP Expired. Your Application Window Has Closed, Please Apply Again.",
         );
     }
 
-    if (redisOTP !== otp) {
-        throw new AppError(httpStatus.UNAUTHORIZED, "OTP does not match!");
+    if (redisOtp !== otp) {
+        throw new AppError(httpStatus.BAD_REQUEST, "OTP Does Not Match");
     }
 
     await redisClient.del(otpKey);
 
-    const verifiedDoctor = await prisma.user.update({
-        where: { id: isUserExists.id },
-        data: {
-            emailVerified: true,
-        },
+    const verifiedUser = await prisma.user.update({
+        where: { id: existingUser.id },
+        data: { emailVerified: true },
         omit: { password: true },
         include: { doctor: true },
     });
 
-    return verifiedDoctor;
-
-    // const patientRegistrationKey = `patient-registration-data: ${email}`;
-    // const redisPatientData = await redisClient.get(patientRegistrationKey);
-    // if (!redisPatientData) {
-    // 	throw new Error("Invalid Patient Data!");
-    // }
-    // const patientPayload: IRegisterPatientPayload = JSON.parse(redisPatientData);
-    // const createdUser = await prisma.user.create({
-    // 	data: {
-    // 		name: patientPayload.name,
-    // 		email: patientPayload.email,
-    // 		password: patientPayload.password,
-    // 		role: Role.PATIENT,
-    // 		status: UserStatus.ACTIVE,
-    // 		emailVerified: true,
-    // 		patient: {
-    // 			create: {
-    // 				name: patientPayload.name,
-    // 				email: patientPayload.email,
-    // 				contactNumber: patientPayload.patient.contactNumber || "",
-    // 			},
-    // 		},
-    // 	},
-    // 	omit: { password: true },
-    // 	include: { patient: true },
-    // });
-    // await redisClient.del(patientRegistrationKey);
-    // const templatePath = path.join(
-    // 	process.cwd(),
-    // 	"src/app/templates/patient-welcome-email.ejs",
-    // );
-    // const templateData = {
-    // 	name: createdUser.name,
-    // };
-    // const html = await ejs.renderFile(templatePath, templateData);
-    // await transporter.sendMail({
-    // 	from: config.email_sender,
-    // 	to: createdUser.email,
-    // 	subject: "Welcome to PH Healthcare System!",
-    // 	html,
-    // });
-    // const { patient, ...user } = createdUser;
-    // const jwtPayload = {
-    // 	userId: user.id,
-    // 	name: user.name,
-    // 	email: user.email,
-    // 	role: user.role,
-    // };
-    // const accessToken = jwtUtils.createToken(
-    // 	jwtPayload,
-    // 	config.jwt_access_secret,
-    // 	config.jwt_access_expires_in as SignOptions,
-    // );
-    // const refreshToken = jwtUtils.createToken(
-    // 	jwtPayload,
-    // 	config.jwt_refresh_secret,
-    // 	config.jwt_refresh_expires_in as SignOptions,
-    // );
-    // return {
-    // 	user,
-    // 	patient,
-    // 	accessToken,
-    // 	refreshToken,
-    // };
-
-    // if (isUserExists?.status === "BLOCKED") {
-    // 	throw new Error("User is Blocked!");
-    // }
-    // if (isUserExists?.isDeleted || isUserExists?.status === "DELETED") {
-    // 	throw new Error("User is Deleted!");
-    // }
-    // // if (isUserExists.googleId && isUserExists.authProvider === "GOOGLE") {
-    // //     throw new Error("User Has Account With Google!");
-    // // }
-    //
+    return verifiedUser;
 };
 
 const approveDoctor = async (
@@ -305,21 +598,21 @@ const approveDoctor = async (
     if (!existingDoctor) {
         throw new AppError(
             httpStatus.NOT_FOUND,
-            "Doctor Application Not Found!",
+            "Doctor Application Not Found",
         );
     }
 
     if (existingDoctor.isDeleted) {
         throw new AppError(
-            httpStatus.NOT_FOUND,
-            "Doctor Application Has Been Deleted!",
+            httpStatus.GONE,
+            "Doctor Application Has Been Deleted",
         );
     }
 
     if (!existingDoctor.user.emailVerified) {
         throw new AppError(
             httpStatus.BAD_REQUEST,
-            "Doctor email has not been varified yet. Application can not be reviewed!",
+            "Doctor Has Not Verified Their Email Yet. Application Cannot Be Reviewed.",
         );
     }
 
@@ -327,7 +620,7 @@ const approveDoctor = async (
         existingDoctor.verificationStatus !== DoctorVerificationStatus.PENDING
     ) {
         throw new AppError(
-            httpStatus.BAD_REQUEST,
+            httpStatus.CONFLICT,
             `Doctor Application Has Already Been ${existingDoctor.verificationStatus.toLowerCase()}`,
         );
     }
@@ -338,11 +631,30 @@ const approveDoctor = async (
     ) {
         throw new AppError(
             httpStatus.BAD_REQUEST,
-            "Rejection reason is required when rejecting a doctor application.",
+            "Rejection Reason Is Required When Rejecting A Doctor Application",
         );
     }
 
-    const updateDoctor = await prisma.doctor.update({
+    const isApproved = verificationStatus === DoctorVerificationStatus.APPROVED;
+
+    const randomDoctorPassword = isApproved
+        ? generateRandomPassword()
+        : undefined;
+
+    if (config.node_env === "development" && randomDoctorPassword) {
+        console.log(
+            `[dev] Random Password plain text: ${randomDoctorPassword}`,
+        );
+    }
+
+    const hashedPassword = randomDoctorPassword
+        ? await bcrypt.hash(
+              randomDoctorPassword,
+              Number(config.bcrypt_salt_rounds),
+          )
+        : undefined;
+
+    const updatedDoctor = await prisma.doctor.update({
         where: { id: doctorId },
         data: {
             verificationStatus,
@@ -352,33 +664,39 @@ const approveDoctor = async (
                     : null,
             reviewedBy: reviewer.userId,
             reviewedAt: new Date(),
+            ...(hashedPassword
+                ? { user: { update: { password: hashedPassword } } }
+                : {}),
         },
     });
 
-    const isApproved = verificationStatus === DoctorVerificationStatus.APPROVED;
-
-    const templatePath = path.join(
+    const tempatePath = path.join(
         process.cwd(),
-        `src/app/templates/${isApproved ? "doctor-application-approved.ejs" : "doctor-application-rejected.ejs"}`,
+        `src/app/templates/${
+            isApproved
+                ? "doctor-application-approved.ejs"
+                : "doctor-application-rejected.ejs"
+        }`,
     );
 
     const templateData = {
-        name: updateDoctor.name,
-        reason: updateDoctor.rejectionReason,
+        name: updatedDoctor.name,
+        reason: updatedDoctor.rejectionReason,
+        password: isApproved ? randomDoctorPassword : undefined,
     };
 
-    const html = await ejs.renderFile(templatePath, templateData);
+    const html = await ejs.renderFile(tempatePath, templateData);
 
     await transporter.sendMail({
         from: config.email_sender,
-        to: updateDoctor.email,
+        to: updatedDoctor.email,
         subject: isApproved
             ? "Your Doctor Application Has Been Approved"
-            : "Your Doctor Application Has Been rejected",
+            : "Your Doctor Application Has Been Rejected",
         html,
     });
 
-    return updateDoctor;
+    return updatedDoctor;
 };
 
 const getAllDoctors = async (query: IQuery) => {
@@ -786,7 +1104,7 @@ const getAllDoctorsListPublic = async (query: IQuery) => {
         skip: skip,
 
         orderBy: {
-            [sortOrder]: sortBy,
+            [sortBy]: sortOrder,
         },
         select: {
             id: true,
